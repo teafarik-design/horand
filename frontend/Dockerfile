@@ -9,7 +9,8 @@ FROM node:20-alpine AS production
 WORKDIR /app
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/public ./public
+RUN mkdir -p ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public 2>/dev/null || true
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/next.config.js ./next.config.js
 EXPOSE 3000
