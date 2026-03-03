@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      UserRole  @default(OWNER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  companies Company[]
+  auditLogs AuditLog[]
+}
+
+enum UserRole {
+  OWNER
+  EDITOR
+}
+
+model Company {
+  id        String      @id @default(uuid())
+  name      String
+  type      CompanyType @default(COMPANY)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  ownerId   String
+  owner     User        @relation(fields: [ownerId], references: [id])
+
+  partners      Partner[]
+  revenueRules  RevenueRule[]
+  agreements    Agreement[]
+  auditLogs     AuditLog[]
+}
+
+enum CompanyType {
+  COMPANY
+  PROJECT
+}
+
+model Partner {
+  id        String   @id @default(uuid())
+  fullName  String
+  share     Float
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  revenueShares RevenueShare[]
+}
+
+model RevenueRule {
+  id          String      @id @default(uuid())
+  type        RevenueType
+  name        String      // e.g. "Project Quantis" or "First 30 clients"
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  companyId   String
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  shares      RevenueShare[]
+}
+
+enum RevenueType {
+  PROJECT
+  CLIENTS
+  NET_PROFIT
+}
+
+model RevenueShare {
+  id            String      @id @default(uuid())
+  share         Float       // percentage
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  partnerId     String
+  partner       Partner     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  revenueRuleId String
+  revenueRule   RevenueRule @relation(fields: [revenueRuleId], references: [id], onDelete: Cascade)
+
+  @@unique([partnerId, revenueRuleId])
+}
+
+model Agreement {
+  id          String          @id @default(uuid())
+  version     Int             @default(1)
+  status      AgreementStatus @default(DRAFT)
+  content     String          @db.Text
+  pdfUrl      String?
+  signature   String?         @db.Text  // base64 signature image
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  companyId   String
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+enum AgreementStatus {
+  DRAFT
+  SIGNED
+  ARCHIVED
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+}
