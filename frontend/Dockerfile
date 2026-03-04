@@ -1,18 +1,21 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
+RUN mkdir -p public
 RUN npm run build
 
 FROM node:20-alpine AS production
 WORKDIR /app
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-RUN mkdir -p ./public
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public 2>/dev/null || true
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/next.config.js ./next.config.js
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+USER nextjs
 EXPOSE 3000
-ENV NODE_ENV=production
-CMD ["npm", "start"]
+ENV PORT 3000
+CMD ["node", "server.js"]
