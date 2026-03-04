@@ -18,4 +18,4 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package*.json ./
 RUN mkdir -p uploads/pdfs
 EXPOSE 4000
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npx prisma db push && node dist/main"]
