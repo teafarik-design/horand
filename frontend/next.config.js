@@ -1,12 +1,17 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
-      { protocol: 'http', hostname: 'localhost', port: '4000' },
-      // Railway backend — разрешаем домены *.railway.app для фото партнёров
-      { protocol: 'https', hostname: '*.railway.app' },
-      { protocol: 'https', hostname: '*.up.railway.app' },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
     ],
   },
-};
-module.exports = nextConfig;
+}
+
+module.exports = nextConfig
