@@ -38,4 +38,4 @@ RUN mkdir -p uploads/pdfs uploads/photos
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && echo '=== Starting NestJS ===' && node dist/main.js || (echo '=== dist/main.js failed, trying dist/src/main.js ===' && node dist/src/main.js)"]
+CMD ["node", "dist/main.js"]
