@@ -8,7 +8,7 @@ RUN npm install
 COPY . .
 RUN npx prisma generate
 RUN rm -rf dist tsconfig.tsbuildinfo && npx nest build && ls -la dist/
-RUN test -f dist/main.js && echo "✅ Build OK" || (echo "❌ FAILED" && ls -la dist/ && exit 1)
+RUN test -f dist/main.js && echo "Build OK" || (echo "FAILED" && exit 1)
 
 FROM node:20-alpine AS production
 WORKDIR /app
