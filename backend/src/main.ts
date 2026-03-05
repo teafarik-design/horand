@@ -8,14 +8,13 @@ import * as express from 'express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS — поддержка Railway и локальной разработки
+  // CORS
   const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
     .split(',')
     .map((s) => s.trim());
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Разрешаем запросы без origin (мобильные, Postman, SSR)
       if (!origin) return callback(null, true);
       if (
         allowedOrigins.some((allowed) => origin === allowed) ||
@@ -40,6 +39,12 @@ async function bootstrap() {
 
   // API prefix
   app.setGlobalPrefix('api');
+
+  // Health check — Railway healthcheck hits /api and expects 200
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get('/api', (_req: any, res: any) => {
+    res.status(200).json({ status: 'ok', service: 'HORAND API' });
+  });
 
   // Serve uploaded files
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
