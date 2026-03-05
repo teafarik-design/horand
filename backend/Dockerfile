@@ -21,7 +21,7 @@ COPY . .
 RUN npx prisma generate
 
 # Build NestJS
-RUN npx nest build 2>&1 || (echo "=== NEST BUILD FAILED ===" && cat tsconfig.json && exit 1)
+RUN rm -rf dist && npx tsc -p tsconfig.json && echo "=== dist contents ===" && ls -la dist/
 
 # Verify build output
 RUN test -f dist/main.js && echo "✅ Build OK: dist/main.js exists" || (echo "❌ Build FAILED: dist/main.js not found" && ls -la dist/ 2>/dev/null && exit 1)
