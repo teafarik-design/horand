@@ -1,233 +1,200 @@
-# HORAND Partnership 🤝
+# HORAND Partnership
 
-> Web app for creating co-ownership partnership agreements. Manage partners, revenue distribution rules, and export legally-structured PDF agreements.
+Веб-застосунок для управління партнерськими угодами. Дозволяє власникам бізнесу керувати співвласниками компаній, розподілом доходів та генерувати PDF-договори з підписом.
 
-## Stack
+## Технології
 
-| Layer | Tech |
-|---|---|
-| Frontend | Next.js 14 (App Router) + TypeScript + Tailwind CSS |
-| Backend | NestJS + TypeScript + Passport JWT |
-| ORM | Prisma |
-| Database | PostgreSQL |
-| PDF | Puppeteer (HTML→PDF) |
-| Auth | JWT (email + password) |
-| Containerization | Docker + docker-compose |
+**Backend:** NestJS, Prisma ORM, PostgreSQL, JWT, Swagger, Puppeteer  
+**Frontend:** Next.js 14, TypeScript, Tailwind CSS, React Hook Form, Zod, Axios
 
 ---
 
-## 🚀 Quick Start (Local)
+## Функціонал
 
-### Prerequisites
+- Реєстрація та авторизація (JWT)
+- Управління компаніями та проєктами
+- Додавання партнерів з фото та частками
+- Правила розподілу доходів (PROJECT / CLIENTS / NET_PROFIT)
+- Генерація PDF-договорів з підписом
+- Ролі: **Owner** (повний доступ) та **Editor** (редагування партнерів і правил)
+- Управління редакторами — власник створює акаунти для співробітників
+
+---
+
+## Локальний запуск
+
+### Вимоги
+
 - Node.js 20+
-- Docker Desktop (for PostgreSQL)
-- npm or yarn
+- PostgreSQL 14+
+- npm
 
-### 1. Clone and install
+### 1. Клонування репозиторію
 
 ```bash
-git clone <repo>
+git clone https://github.com/teafarik-design/horand.git
 cd horand
-
-# Install backend deps
-cd backend && npm install
-
-# Install frontend deps
-cd ../frontend && npm install
 ```
 
-### 2. Start PostgreSQL
-
-```bash
-cd ..
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-### 3. Configure backend
+### 2. Backend
 
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env if needed (defaults work with docker-compose.dev.yml)
 ```
 
-### 4. Run migrations and seed
+Заповни `.env`:
 
-```bash
-# In /backend
-npx prisma migrate dev --name init
-npm run prisma:generate
-npm run prisma:seed
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/horand"
+JWT_SECRET="your-secret-key"
+JWT_EXPIRES_IN="7d"
+FRONTEND_URL="http://localhost:3000"
+PORT=4000
 ```
 
-### 5. Start backend
-
 ```bash
+npm install
+npx prisma db push
 npm run start:dev
-# API running at http://localhost:4000
-# Swagger docs: http://localhost:4000/api/docs
 ```
 
-### 6. Start frontend
+Backend запуститься на `http://localhost:4000`  
+Swagger документація: `http://localhost:4000/api/docs`
+
+### 3. Frontend
 
 ```bash
-cd ../frontend
+cd frontend
 cp .env.example .env.local
+```
+
+Заповни `.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
+```
+
+```bash
+npm install
 npm run dev
-# App running at http://localhost:3000
 ```
 
-### Test credentials
-
-```
-Email: demo@horand.com
-Password: password123
-```
+Frontend запуститься на `http://localhost:3000`
 
 ---
 
-## 🐳 Production Deployment (Docker)
+## Деплой на Railway
 
-### Build and run everything
+### Структура сервісів
 
-```bash
-docker-compose up --build -d
+| Сервіс | Тип | Root Directory |
+|--------|-----|----------------|
+| PostgreSQL | Database | — |
+| horand | GitHub repo | `backend` |
+| insightful-passion | GitHub repo | `frontend` |
+
+### Backend — змінні середовища
+
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=https://your-frontend.up.railway.app
+PORT=4000
+PUPPETEER_SKIP_DOWNLOAD=true
 ```
 
-This starts:
-- PostgreSQL on port 5432
-- Backend API on port 4000
-- Frontend on port 3000
+### Frontend — змінні середовища
 
-Migrations run automatically on backend startup.
-
-### DigitalOcean Droplet
-
-```bash
-# On your Droplet (Ubuntu 22.04):
-apt update && apt install -y docker.io docker-compose-plugin
-
-git clone <repo>
-cd horand
-
-# Edit docker-compose.yml — change JWT_SECRET and optionally FRONTEND_URL
-nano docker-compose.yml
-
-docker compose up --build -d
-
-# Seed demo data (first time only):
-docker compose exec backend npx ts-node prisma/seed.ts
+```env
+NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app/api
 ```
 
-Access at `http://<droplet-ip>:3000`
+### Налаштування Railway
+
+**Backend сервіс:**
+- Builder: `Dockerfile`
+- Dockerfile Path: `/backend/Dockerfile`
+- Pre-deploy Command: `npx prisma db push --accept-data-loss`
+- Healthcheck Path: `/api`
+- Healthcheck Timeout: `300`
+
+**Frontend сервіс:**
+- Builder: `Dockerfile`
+- Dockerfile Path: `/frontend/Dockerfile`
+- Healthcheck Path: `/`
+- Healthcheck Timeout: `180`
 
 ---
 
-## 📁 Project Structure
+## Структура проєкту
 
 ```
 horand/
-├── backend/                    # NestJS API
-│   ├── src/
-│   │   ├── auth/               # JWT auth, login, register
-│   │   ├── companies/          # Company/project CRUD
-│   │   ├── partners/           # Partner CRUD + photo upload
-│   │   ├── revenue-rules/      # Revenue distribution rules
-│   │   ├── agreements/         # Agreement generation + PDF export
-│   │   ├── pdf/                # PDF generation service (Puppeteer)
-│   │   ├── prisma/             # Prisma service
-│   │   └── tests/              # Unit tests
+├── backend/
 │   ├── prisma/
-│   │   ├── schema.prisma       # DB schema
-│   │   └── seed.ts             # Demo data seed
-│   ├── uploads/                # Uploaded files (partner photos, PDFs)
-│   ├── .env.example
+│   │   └── schema.prisma        # Схема БД
+│   ├── src/
+│   │   ├── auth/                # JWT авторизація
+│   │   ├── companies/           # Компанії та проєкти
+│   │   ├── partners/            # Партнери
+│   │   ├── revenue-rules/       # Правила доходів
+│   │   ├── agreements/          # Договори
+│   │   ├── editors/             # Управління редакторами
+│   │   ├── pdf/                 # Генерація PDF
+│   │   └── main.ts
 │   └── Dockerfile
-│
-├── frontend/                   # Next.js 14 App
-│   ├── app/
-│   │   ├── auth/               # Login + Register pages
-│   │   ├── dashboard/          # Main dashboard
-│   │   └── company/[id]/       # Company detail pages
-│   │       ├── page.tsx        # Overview
-│   │       ├── partners/       # Partner management
-│   │       ├── revenue/        # Revenue rules
-│   │       └── agreement/      # Agreement + PDF export
-│   ├── components/
-│   │   ├── layout/             # Navbar, AuthGuard
-│   │   └── ui/                 # Reusable UI components
-│   ├── lib/                    # API client, auth utils, types
-│   ├── .env.example
-│   └── Dockerfile
-│
-├── docker-compose.yml          # Production
-├── docker-compose.dev.yml      # Local dev (DB only)
-└── README.md
+└── frontend/
+    ├── app/
+    │   ├── auth/                # Логін / реєстрація
+    │   ├── dashboard/           # Головна сторінка
+    │   ├── company/[id]/        # Компанія, партнери, доходи, договір
+    │   └── editors/             # Управління редакторами
+    ├── components/
+    │   ├── layout/              # Navbar, AuthGuard
+    │   └── ui/                  # Modal, ProgressBar, PartnerAvatar
+    ├── lib/
+    │   ├── api.ts               # Axios клієнт та всі API виклики
+    │   ├── auth.ts              # JWT утиліти
+    │   └── types.ts             # TypeScript типи
+    └── Dockerfile
 ```
 
 ---
 
-## 🧪 Tests
+## Ролі користувачів
 
-```bash
-cd backend
-npm test                  # Run all tests
-npm run test:cov          # With coverage
-```
-
-Tests cover:
-- Auth: register validation, login, JWT
-- Partners: share validation (no > 100%)
-- Revenue rules: shares must sum to 100%
+| Дія | Owner | Editor |
+|-----|-------|--------|
+| Створити компанію | ✅ | ❌ |
+| Видалити компанію | ✅ | ❌ |
+| Редагувати партнерів | ✅ | ✅ |
+| Редагувати правила доходів | ✅ | ✅ |
+| Генерувати договір | ✅ | ❌ |
+| Керувати редакторами | ✅ | ❌ |
 
 ---
 
-## 🔑 API Overview
+## API Endpoints
 
-All protected routes require `Authorization: Bearer <token>`.
+| Метод | Endpoint | Опис |
+|-------|----------|------|
+| POST | `/api/auth/register` | Реєстрація |
+| POST | `/api/auth/login` | Вхід |
+| GET | `/api/auth/me` | Профіль |
+| GET/POST | `/api/companies` | Компанії |
+| GET/PATCH/DELETE | `/api/companies/:id` | Компанія |
+| GET/POST | `/api/companies/:id/partners` | Партнери |
+| GET/POST | `/api/companies/:id/revenue-rules` | Правила доходів |
+| POST | `/api/companies/:id/agreements/generate` | Генерація договору |
+| POST | `/api/companies/:id/agreements/:id/export-pdf` | Експорт PDF |
+| GET/POST/DELETE | `/api/editors` | Редактори |
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | /api/auth/register | Register |
-| POST | /api/auth/login | Login |
-| GET | /api/auth/me | Current user |
-| GET | /api/companies | List companies |
-| POST | /api/companies | Create company |
-| GET | /api/companies/:id | Get company |
-| PATCH | /api/companies/:id | Update company |
-| DELETE | /api/companies/:id | Delete company |
-| GET | /api/companies/:id/partners | List partners |
-| POST | /api/companies/:id/partners | Add partner (multipart/form-data) |
-| PATCH | /api/companies/:id/partners/:pid | Update partner |
-| DELETE | /api/companies/:id/partners/:pid | Delete partner |
-| GET | /api/companies/:id/revenue-rules | List rules |
-| POST | /api/companies/:id/revenue-rules | Create rule |
-| PATCH | /api/companies/:id/revenue-rules/:rid | Update rule |
-| DELETE | /api/companies/:id/revenue-rules/:rid | Delete rule |
-| POST | /api/companies/:id/agreements/generate | Generate agreement |
-| GET | /api/companies/:id/agreements | List agreements |
-| POST | /api/companies/:id/agreements/:aid/export-pdf | Export PDF |
-
-Swagger UI: `http://localhost:4000/api/docs`
+Повна документація: `/api/docs` (Swagger UI)
 
 ---
 
-## 🌐 Language
-
-The app supports **Ukrainian** (primary) and **English** (API/code). Interface language is Ukrainian.
-
----
-
-## 📸 DO Spaces (Optional — file storage)
-
-To store uploads in DigitalOcean Spaces instead of local `/uploads`:
-
-1. Install `@aws-sdk/client-s3` in the backend
-2. Update `MulterModule` in `partners.module.ts` and `companies.module.ts` to use S3 storage
-3. Add env vars: `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_ENDPOINT`, `DO_SPACES_BUCKET`
-
----
-
-## License
+## Ліцензія
 
 MIT
