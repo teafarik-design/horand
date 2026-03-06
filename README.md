@@ -191,10 +191,3 @@ horand/
 | POST | `/api/companies/:id/agreements/:id/export-pdf` | Експорт PDF |
 | GET/POST/DELETE | `/api/editors` | Редактори |
 
-Повна документація: `/api/docs` (Swagger UI)
-
----
-
-## Ліцензія
-
-MIT
